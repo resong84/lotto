@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 로또 번호 생성기 ✨</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>✨ 로또 번호 각 칸별 확률 기반 랜덤 조합 생성기 ✨</h1>
+        <div class="input-frame">
+            <h2>로또 번호 생성 설정</h2>
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="num1">1칸:</label>
+                    <select id="num1">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="num2">2칸:</label>
+                    <select id="num2">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="num3">3칸:</label>
+                    <select id="num3">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="num4">4칸:</label>
+                    <select id="num4">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="num5">5칸:</label>
+                    <select id="num5">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="num6">6칸:</label>
+                    <select id="num6">
+                        <option value="random">랜덤 (r)</option>
+                        <option value="top">높은 확률 (t)</option>
+                        <option value="bottom">낮은 확률 (b)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="generation-controls">
+                <label for="num-combinations">생성할 조합 개수 (1~20):</label>
+                <input type="number" id="num-combinations" value="1" min="1" max="20">
+            </div>
+        </div>
+        <button id="generate-button">로또 번호 생성</button>
+        <div class="output-frame">
+            <h2>--- 생성된 랜덤 조합 ---</h2>
+            <div id="output-text"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
