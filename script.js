@@ -96,26 +96,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function get_random_number_from_column(prob_df, column_name, selection_type, exclude_numbers = new Set()) {
         let eligible_numbers = [];
 
-        // column_name이 유효하고 prob_df.columns에 포함되어 있는지 확인
         if (column_name && prob_df.columns.includes(column_name)) {
+            // 디버깅: 현재 칸의 모든 번호와 확률 값 출력
+            console.log(`DEBUG: Processing ${column_name} for ${selection_type} selection.`);
+            prob_df.data.forEach(row => {
+                // 각 번호의 실제 확률 값과 타입 출력
+                console.log(`  Number: ${row.번호}, Probability: ${row[column_name]} (Type: ${typeof row[column_name]})`);
+            });
+
             if (selection_type === 'top') {
-                // top < 2%
                 eligible_numbers = prob_df.data
                     .filter(row => row[column_name] > 2) // 2% 초과
                     .map(row => row.번호);
             } else if (selection_type === 'bottom') {
-                // 0.2% <= bottom <= 2.5%
                 eligible_numbers = prob_df.data
-                    .filter(row => row[column_name] >= 0.2 && row[column_name] <= 2.5)
+                    .filter(row => {
+                        const prob = row[column_name];
+                        // 디버깅: 각 번호가 '낮은 확률' 조건에 부합하는지 여부와 실제 비교 값 출력
+                        const isEligible = prob >= 0.2 && prob <= 2.5;
+                        console.log(`  Number: ${row.번호}, Prob: ${prob}%, Eligible for bottom: ${isEligible} (Comparison: ${prob} >= 0.2 && ${prob} <= 2.5)`);
+                        return isEligible;
+                    })
                     .map(row => row.번호);
             } else if (selection_type === 'random') {
-                // 0보다 큰 모든 번호 필터링
                 eligible_numbers = prob_df.filterNonZero(column_name).map(row => row.번호);
             }
         }
 
         // 이미 선택된 번호들을 제외
         let final_eligible_numbers = eligible_numbers.filter(num => !exclude_numbers.has(num));
+
+        // 디버깅: 필터링 후 최종적으로 선택 가능한 번호들 출력
+        console.log(`DEBUG: Final eligible numbers for ${column_name} (${selection_type}):`, final_eligible_numbers);
 
         if (final_eligible_numbers.length === 0) {
             return null;
