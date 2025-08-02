@@ -24,37 +24,66 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error("입력된 데이터가 충분하지 않습니다.");
         }
 
-        const headerLine = lines[0]; // 예: "1칸확률 2칸확률 3칸확률 4칸확률 5칸확률 6칸확률"
+        let headerLine = lines[0];
+        // 프리픽스가 있으면 제거합니다.
+        headerLine = headerLine.replace(/^\\s*/, ''); 
+
         const dataLines = lines.slice(1);
 
-        // 헤더를 공백으로 분리하여 열 이름을 직접 얻습니다.
-        // 결과: ['1칸확률', '2칸확률', ..., '6칸확률']
-        const columns = headerLine.split(/\s+/).filter(h => h);
+        // 헤더를 탭으로 분리하여 원본 열 이름들을 가져옵니다.
+        // 예: ['숫자', '1칸', '확률', '2칸', '확률', ...]
+        const rawHeaders = headerLine.split('\t').filter(h => h); 
         
+        const columns = ["번호"]; // '번호' 열로 시작합니다.
+
+        // rawHeaders를 반복하여 최종 열 이름들을 생성합니다.
+        // 예: ['번호', '1칸', '1칸확률', '2칸', '2칸확률', ...]
+        // '숫자' 다음부터 시작하므로 인덱스 1부터 2칸씩 건너뛰며 반복합니다.
+        for (let i = 1; i < rawHeaders.length; i += 2) { 
+            const baseName = rawHeaders[i]; // 예: '1칸', '2칸'
+            const probIndicator = rawHeaders[i+1]; // 예: '확률'
+
+            if (probIndicator && probIndicator.trim().toLowerCase() === '확률') {
+                columns.push(baseName); // '1칸' (빈도) 열 추가
+                columns.push(`${baseName}확률`); // '1칸확률' (확률) 열 추가
+            } else {
+                throw new Error(`헤더 형식이 'X칸 확률' 패턴과 다릅니다. 문제의 부분: '${rawHeaders[i]} ${rawHeaders[i+1]}'`);
+            }
+        }
+
         // 데이터 행을 처리합니다.
         const data = [];
         for (const line of dataLines) {
-            const parts = line.split(/\s+/).filter(p => p);
+            const parts = line.split('\t').filter(p => p); // 탭으로 분리
             if (parts.length === 0) continue; // 빈 줄 건너뛰기
 
-            const rowNum = parseInt(parts[0]); // 첫 번째 요소는 '번호'입니다.
-            const rowData = { "번호": rowNum }; // 행 데이터를 위한 객체 초기화
+            const rowData = {}; // 행 데이터를 위한 객체
 
-            // 나머지 부분을 반복하여 열 값을 가져옵니다.
-            // parts[0]이 '번호'이므로, 실제 데이터 열은 parts[1]부터 시작합니다.
-            // columns 배열은 parts[1]부터의 부분과 일치합니다.
-            for (let i = 0; i < columns.length; i++) {
-                const colName = columns[i]; // 예: "1칸확률"
-                const value = parseFloat(parts[i + 1].replace('%', '')); // 퍼센트 문자열을 숫자로 변환
-                rowData[colName] = value;
+            // 첫 번째 부분은 '번호'입니다.
+            rowData["번호"] = parseInt(parts[0]);
+
+            // 나머지 부분을 반복하여 각 열의 값을 가져옵니다.
+            // 데이터는 parts[1]부터 시작하며, (빈도, 퍼센트) 쌍으로 되어 있습니다.
+            let colIndexInColumns = 1; // 최종 columns 배열에서 현재 위치 인덱스 (초기값: '1칸' 열)
+            for (let i = 1; i < parts.length; i += 2) { // parts 배열을 2개씩 건너뛰며 반복
+                const count = parseInt(parts[i]); // 빈도 값
+                const percentage = parseFloat(parts[i + 1].replace('%', '')); // 퍼센트 문자열을 숫자로 변환
+
+                const baseColName = columns[colIndexInColumns]; // 예: '1칸'
+                const probColName = columns[colIndexInColumns + 1]; // 예: '1칸확률'
+                
+                rowData[baseColName] = count; // '1칸'에 빈도 값 할당
+                rowData[probColName] = percentage; // '1칸확률'에 퍼센트 값 할당
+                
+                colIndexInColumns += 2; // 다음 빈도/확률 쌍으로 이동
             }
             data.push(rowData);
         }
 
         // pandas DataFrame과 유사한 구조를 반환하여 후속 로직에서 쉽게 접근하도록 합니다.
         const probDf = {
-            columns: columns, // 열 이름 배열: ['1칸확률', '2칸확률', ...]
-            data: data,       // 행 객체 배열: [{번호: 1, '1칸확률': 1.0, ...}, ...]
+            columns: columns, // 열 이름 배열: ['번호', '1칸', '1칸확률', '2칸', '2칸확률', ...]
+            data: data,       // 행 객체 배열: [{번호: 1, '1칸': 152, '1칸확률': 12.86, ...}, ...]
 
             // 특정 열을 기준으로 데이터를 정렬하는 헬퍼 함수
             sortValues: function(columnName, ascending = true) {
@@ -80,12 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ************ 수정된 부분 끝 ************
 
 
-    // ************ 수정된 부분: get_random_number_from_column 함수 ************
+    // ************ 수정된 부분: get_random_number_from_column 함수 (이전과 거의 동일하지만, probDf 구조에 맞춰 동작 확인) ************
     function get_random_number_from_column(prob_df, column_name, selection_type, exclude_numbers = new Set(), top_range = 5, bottom_range = 8) {
         let eligible_numbers = [];
 
         // column_name이 유효하고 prob_df.columns에 포함되어 있는지 확인
-        if (column_name && prob_df.columns.includes(column_name)) {
+        if (column_name && prob_df.columns.includes(column_name)) { // 예: '1칸확률'이 columns 배열에 있는지 확인
             if (selection_type === 'top') {
                 // prob_df.sortValues는 정렬된 데이터를 반환
                 const sorted_prob_data = prob_df.sortValues(column_name, false); // false = 내림차순 (top)
@@ -117,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Combination Generation Logic ---
     function generateCombinations() {
-        outputText.innerHTML = ''; // Clear previous results
+        outputText.innerHTML = ''; // 이전 결과 지우기
 
         const selectionCombos = document.querySelectorAll('.controls-grid select');
         const numCombinationsInput = document.getElementById('num-combinations');
@@ -140,13 +169,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 현재 웹 앱에는 Top/Bottom 범위 설정 UI가 없으므로 하드코딩된 기본값을 사용합니다.
-        // 만약 이 값을 변경하려면 HTML에 해당 입력 필드를 추가하고 여기서 값을 읽어와야 합니다.
         const defaultTopRange = 5;
         const defaultBottomRange = 8;
 
         for (let i = 0; i < numToGenerate; i++) {
             const finalCombinationSet = new Set();
-            const randomSelectedNumbers = []; // Store numbers selected via 'random' type
+            const randomSelectedNumbers = []; // 'random' 타입으로 선택된 번호들을 저장
 
             const colsToProcess = {
                 'top': [],
@@ -159,12 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 colsToProcess[selectionType].push(parseInt(colNum));
             }
 
-            // Process 'top', 'bottom', 'random' in order
+            // 'top', 'bottom', 'random' 순서로 처리
             for (const colType of ['top', 'bottom', 'random']) {
                 for (const colNum of colsToProcess[colType].sort((a, b) => a - b)) {
                     if (finalCombinationSet.size >= 6) break;
 
-                    const column_name = `${colNum}칸확률`;
+                    // 새로운 probDf 구조에 맞춰 컬럼 이름은 여전히 'X칸확률'
+                    const column_name = `${colNum}칸확률`; 
                     const selected_num = get_random_number_from_column(
                         probDf,
                         column_name,
@@ -231,6 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     generateButton.addEventListener('click', generateCombinations);
 
-    // Initial data load
+    // 초기 데이터 로드
     loadData();
 });
