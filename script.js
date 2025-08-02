@@ -177,34 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let finalCombinationList = Array.from(finalCombinationSet);
-            let fillMessage = "";
-
-            if (finalCombinationList.length < 6) {
-                const remainingCount = 6 - finalCombinationList.length;
-                const allPossibleNumbers = new Set(Array.from({ length: 45 }, (_, i) => i + 1));
-                const availableNumbersForFill = Array.from(allPossibleNumbers).filter(num => !finalCombinationSet.has(num));
-
-                if (availableNumbersForFill.length >= remainingCount) {
-                    // 랜덤으로 부족한 숫자 채우기
-                    const newlyAdded = [];
-                    for (let k = 0; k < remainingCount; k++) {
-                        const randomIndex = Math.floor(Math.random() * availableNumbersForFill.length);
-                        const num = availableNumbersForFill.splice(randomIndex, 1)[0];
-                        newlyAdded.push(num);
-                    }
-                    finalCombinationList.push(...newlyAdded);
-                    fillMessage = " (일부 숫자가 1~45 랜덤으로 채워졌습니다.)";
-                } else {
-                    fillMessage = " (6개 숫자를 채우지 못했습니다.)";
-                }
-            }
-
             finalCombinationList.sort((a, b) => a - b);
 
             const resultDiv = document.createElement('div');
             resultDiv.classList.add('combination-result');
 
-            const combinationText = `<strong>조합 ${i + 1}:</strong> <span class="combination-numbers">[${finalCombinationList.join(', ')}]</span>${fillMessage}`;
+            const combinationText = `<strong>조합 ${i + 1}:</strong> <span class="combination-numbers">[${finalCombinationList.join(', ')}]</span>`;
             let randomValueText = "";
             if (randomSelectedNumbers.length > 0) {
                 randomValueText = `<span class="random-value">랜덤값: ${randomSelectedNumbers.sort((a, b) => a - b).join(', ')}</span>`;
