@@ -79,11 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return this.columns.includes(colName);
             },
 
-            // filterNonZero 함수는 get_random_number_from_column에서 사용되지 않으므로 제거하거나 필요시 수정
-            // 현재 get_random_number_from_column에서는 직접 필터링하므로 이 함수는 필요 없음
-            // filterNonZero: function(columnName) {
-            //     return this.data.filter(row => row[columnName] > 0);
-            // }
+            // filterNonZero 함수를 다시 추가합니다.
+            filterNonZero: function(columnName) {
+                return this.data.filter(row => row[columnName] > 0);
+            }
         };
 
         return probDf;
