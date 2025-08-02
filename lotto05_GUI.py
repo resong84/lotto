@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import io
 import random
@@ -18,16 +19,22 @@ def parse_and_prepare_data(data_text):
     header_line = lines[0]
     data_lines = '\n'.join(lines[1:])
     
-    raw_headers = header_line.split() 
+    raw_headers = header_line.split()
+    # '숫자' 헤더를 건너뛰고, 실제 칸별 헤더부터 처리합니다.
+    # raw_headers[0]은 '숫자'이므로, raw_headers[1:]부터 시작합니다.
+    processed_headers = raw_headers[1:] # '숫자'를 제외한 나머지 헤더
+
     parsed_headers = []
-    
-    for i in range(0, len(raw_headers), 2):
-        if i + 1 < len(raw_headers) and raw_headers[i+1].strip().lower() == '확률':
-            base_name = raw_headers[i].strip()
+
+    # processed_headers를 2개씩 묶어서 처리합니다.
+    for i in range(0, len(processed_headers), 2):
+        if i + 1 < len(processed_headers) and processed_headers[i+1].strip().lower() == '확률':
+            base_name = processed_headers[i].strip()
             parsed_headers.append(f'{base_name}빈도')
             parsed_headers.append(f'{base_name}확률')
         else:
-            raise ValueError(f"헤더 형식이 '칸 확률' 패턴과 다릅니다. 문제의 부분: '{raw_headers[i]}'")
+            # 오류 메시지를 더 명확하게 수정합니다.
+            raise ValueError(f"헤더 형식이 '칸 확률' 패턴과 다릅니다. 문제의 부분: '{processed_headers[i]} {processed_headers[i+1] if i+1 < len(processed_headers) else ''}'")
             
     df = pd.read_csv(io.StringIO(data_lines), sep=r'\s+', header=None, engine='python', index_col=0)
     df.index.name = '번호' 
@@ -77,6 +84,7 @@ def get_random_number_from_column(prob_df, column_name, selection_type, exclude_
     elif selection_type == 'bottom':
         # Select numbers with probability between 0.2% and 2.5%
         bottom_prob_df = prob_df[(prob_df[column_name] >= 0.2) & (prob_df[column_name] <= 2.5)]
+
         eligible_numbers = [num for num in bottom_prob_df.index.tolist() if num not in exclude_numbers]
     elif selection_type == 'random':
         all_non_zero_numbers = prob_df[prob_df[column_name] > 0].index.tolist()
@@ -114,11 +122,14 @@ class LottoGeneratorApp:
         Loads the predefined lottery data from an external file.
         """
         try:
-            with open('lotto_data.txt', 'r', encoding='utf-8') as f:
+            script_dir = os.path.dirname(__file__)
+            file_path = os.path.join(script_dir, 'lotto_data.txt')
+
+            with open(file_path, 'r', encoding='utf-8') as f:
                 data_as_text = f.read()
             return parse_and_prepare_data(data_as_text)
         except FileNotFoundError:
-            messagebox.showerror("파일 없음 오류", "'lotto_data.txt' 파일을 찾을 수 없습니다. 프로그램과 같은 디렉토리에 있는지 확인해주세요.")
+            messagebox.showerror("파일 없음 오류", f"'{file_path}' 파일을 찾을 수 없습니다. 프로그램과 같은 디렉토리에 있는지 확인해주세요.")
             return None
         except Exception as e:
             messagebox.showerror("파일 읽기 오류", f"'lotto_data.txt' 파일을 읽는 중 오류가 발생했습니다: {e}")

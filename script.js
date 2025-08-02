@@ -29,17 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataLines = lines.slice(1);
 
         const rawHeaders = headerLine.split('\t').filter(h => h);
-        const columns = ["번호"];
+        // '숫자' 헤더를 건너뛰고, 실제 칸별 헤더부터 처리합니다.
+        // rawHeaders[0]은 '숫자'이므로, rawHeaders.slice(1)부터 시작합니다.
+        const processedHeaders = rawHeaders.slice(1); // '숫자'를 제외한 나머지 헤더
 
-        for (let i = 1; i < rawHeaders.length; i += 2) {
-            const baseName = rawHeaders[i];
-            const probIndicator = rawHeaders[i+1];
+        const columns = ["번호"]; // '번호' 컬럼은 항상 존재
 
-            if (probIndicator && probIndicator.trim().toLowerCase() === '확률') {
-                columns.push(baseName);
-                columns.push(`${baseName}확률`);
+        // processedHeaders를 2개씩 묶어서 처리합니다.
+        for (let i = 0; i < processedHeaders.length; i += 2) {
+            if (i + 1 < processedHeaders.length && processedHeaders[i+1].trim().toLowerCase() === '확률') {
+                const baseName = processedHeaders[i].trim();
+                columns.push(baseName); // 빈도 컬럼 (예: 1칸)
+                columns.push(`${baseName}확률`); // 확률 컬럼 (예: 1칸확률)
             } else {
-                throw new Error(`헤더 형식이 'X칸 확률' 패턴과 다릅니다. 문제의 부분: '${rawHeaders[i]} ${rawHeaders[i+1]}'`);
+                throw new Error(`헤더 형식이 '칸 확률' 패턴과 다릅니다. 문제의 부분: '${processedHeaders[i]} ${processedHeaders[i+1] || ''}'`);
             }
         }
 
@@ -51,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rowData = {};
             rowData["번호"] = parseInt(parts[0]);
 
-            let colIndexInColumns = 1;
+            let colIndexInColumns = 1; // '번호' 다음 컬럼부터 시작
             for (let i = 1; i < parts.length; i += 2) {
                 const count = parseInt(parts[i]);
                 const percentage = parseFloat(parts[i + 1].replace('%', ''));
@@ -71,21 +74,16 @@ document.addEventListener('DOMContentLoaded', () => {
             columns: columns,
             data: data,
 
-            sortValues: function(columnName, ascending = true) {
-                return [...this.data].sort((a, b) => {
-                    const valA = a[columnName];
-                    const valB = b[columnName];
-                    if (ascending) {
-                        return valA - valB;
-                    } else {
-                        return valB - valA;
-                    }
-                });
+            // probDf.columns에 포함되어 있는지 확인하는 로직을 위해 추가
+            includes: function(colName) {
+                return this.columns.includes(colName);
             },
 
-            filterNonZero: function(columnName) {
-                return this.data.filter(row => row[columnName] > 0);
-            }
+            // filterNonZero 함수는 get_random_number_from_column에서 사용되지 않으므로 제거하거나 필요시 수정
+            // 현재 get_random_number_from_column에서는 직접 필터링하므로 이 함수는 필요 없음
+            // filterNonZero: function(columnName) {
+            //     return this.data.filter(row => row[columnName] > 0);
+            // }
         };
 
         return probDf;
