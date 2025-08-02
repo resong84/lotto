@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selection_type === 'top') {
                 // top < 2%
                 eligible_numbers = prob_df.data
-                    .filter(row => row[column_name] < 2)
+                    .filter(row => row[column_name] > 2) // 2% 초과
                     .map(row => row.번호);
             } else if (selection_type === 'bottom') {
                 // 0.2% <= bottom <= 2.5%
