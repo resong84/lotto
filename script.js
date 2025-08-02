@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 이미 선택된 번호들을 제외
-        const final_eligible_numbers = eligible_numbers.filter(num => !exclude_numbers.has(num));
+        let final_eligible_numbers = eligible_numbers.filter(num => !exclude_numbers.has(num));
 
         if (final_eligible_numbers.length === 0) {
             return null;
