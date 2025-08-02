@@ -110,25 +110,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ************ 수정된 부분: get_random_number_from_column 함수 (이전과 거의 동일하지만, probDf 구조에 맞춰 동작 확인) ************
-    function get_random_number_from_column(prob_df, column_name, selection_type, exclude_numbers = new Set(), top_range = 5, bottom_range = 8) {
+    function get_random_number_from_column(prob_df, column_name, selection_type, exclude_numbers = new Set()) {
         let eligible_numbers = [];
 
         // column_name이 유효하고 prob_df.columns에 포함되어 있는지 확인
-        if (column_name && prob_df.columns.includes(column_name)) { // 예: '1칸확률'이 columns 배열에 있는지 확인
+        if (column_name && prob_df.columns.includes(column_name)) {
             if (selection_type === 'top') {
-                // prob_df.sortValues는 정렬된 데이터를 반환
-                const sorted_prob_data = prob_df.sortValues(column_name, false); // false = 내림차순 (top)
-                eligible_numbers = sorted_prob_data.slice(0, top_range).map(row => row.번호);
+                // top < 2%
+                eligible_numbers = prob_df.data
+                    .filter(row => row[column_name] < 2)
+                    .map(row => row.번호);
             } else if (selection_type === 'bottom') {
-                // 0보다 큰 확률의 데이터만 필터링
-                const non_zero_prob_data = prob_df.filterNonZero(column_name);
-                // 필터링된 데이터를 오름차순으로 다시 정렬
-                const sorted_non_zero_prob_data = [...non_zero_prob_data].sort((a, b) => a[column_name] - b[column_name]);
-                eligible_numbers = sorted_non_zero_prob_data.slice(0, bottom_range).map(row => row.번호);
+                // 0.2% <= bottom <= 2.5%
+                eligible_numbers = prob_df.data
+                    .filter(row => row[column_name] >= 0.2 && row[column_name] <= 2.5)
+                    .map(row => row.번호);
             } else if (selection_type === 'random') {
                 // 0보다 큰 모든 번호 필터링
-                const all_non_zero_numbers = prob_df.filterNonZero(column_name).map(row => row.번호);
-                eligible_numbers = all_non_zero_numbers;
+                eligible_numbers = prob_df.filterNonZero(column_name).map(row => row.번호);
             }
         }
 
@@ -168,10 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 현재 웹 앱에는 Top/Bottom 범위 설정 UI가 없으므로 하드코딩된 기본값을 사용합니다.
-        const defaultTopRange = 5;
-        const defaultBottomRange = 8;
-
         for (let i = 0; i < numToGenerate; i++) {
             const finalCombinationSet = new Set();
             const randomSelectedNumbers = []; // 'random' 타입으로 선택된 번호들을 저장
@@ -198,9 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         probDf,
                         column_name,
                         colType,
-                        finalCombinationSet,
-                        defaultTopRange,    // Top 범위 전달
-                        defaultBottomRange  // Bottom 범위 전달
+                        finalCombinationSet
                     );
 
                     if (selected_num !== null) {
