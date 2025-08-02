@@ -24,68 +24,52 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error("입력된 데이터가 충분하지 않습니다.");
         }
 
-        let headerLine = lines[0];
-        // 프리픽스가 있으면 제거합니다.
-        headerLine = headerLine.replace(/^\\s*/, ''); 
-
+        const headerLine = lines[0];
         const dataLines = lines.slice(1);
 
-        // 헤더를 탭으로 분리하여 원본 열 이름들을 가져옵니다.
-        // 예: ['숫자', '1칸', '확률', '2칸', '확률', ...]
-        const rawHeaders = headerLine.split('\t').filter(h => h); 
-        
-        const columns = ["번호"]; // '번호' 열로 시작합니다.
+        const rawHeaders = headerLine.split('\t').filter(h => h);
+        const columns = ["번호"];
 
-        // rawHeaders를 반복하여 최종 열 이름들을 생성합니다.
-        // 예: ['번호', '1칸', '1칸확률', '2칸', '2칸확률', ...]
-        // '숫자' 다음부터 시작하므로 인덱스 1부터 2칸씩 건너뛰며 반복합니다.
-        for (let i = 1; i < rawHeaders.length; i += 2) { 
-            const baseName = rawHeaders[i]; // 예: '1칸', '2칸'
-            const probIndicator = rawHeaders[i+1]; // 예: '확률'
+        for (let i = 1; i < rawHeaders.length; i += 2) {
+            const baseName = rawHeaders[i];
+            const probIndicator = rawHeaders[i+1];
 
             if (probIndicator && probIndicator.trim().toLowerCase() === '확률') {
-                columns.push(baseName); // '1칸' (빈도) 열 추가
-                columns.push(`${baseName}확률`); // '1칸확률' (확률) 열 추가
+                columns.push(baseName);
+                columns.push(`${baseName}확률`);
             } else {
                 throw new Error(`헤더 형식이 'X칸 확률' 패턴과 다릅니다. 문제의 부분: '${rawHeaders[i]} ${rawHeaders[i+1]}'`);
             }
         }
 
-        // 데이터 행을 처리합니다.
         const data = [];
         for (const line of dataLines) {
-            const parts = line.split('\t').filter(p => p); // 탭으로 분리
-            if (parts.length === 0) continue; // 빈 줄 건너뛰기
+            const parts = line.split('\t').filter(p => p);
+            if (parts.length === 0) continue;
 
-            const rowData = {}; // 행 데이터를 위한 객체
-
-            // 첫 번째 부분은 '번호'입니다.
+            const rowData = {};
             rowData["번호"] = parseInt(parts[0]);
 
-            // 나머지 부분을 반복하여 각 열의 값을 가져옵니다.
-            // 데이터는 parts[1]부터 시작하며, (빈도, 퍼센트) 쌍으로 되어 있습니다.
-            let colIndexInColumns = 1; // 최종 columns 배열에서 현재 위치 인덱스 (초기값: '1칸' 열)
-            for (let i = 1; i < parts.length; i += 2) { // parts 배열을 2개씩 건너뛰며 반복
-                const count = parseInt(parts[i]); // 빈도 값
-                const percentage = parseFloat(parts[i + 1].replace('%', '')); // 퍼센트 문자열을 숫자로 변환
+            let colIndexInColumns = 1;
+            for (let i = 1; i < parts.length; i += 2) {
+                const count = parseInt(parts[i]);
+                const percentage = parseFloat(parts[i + 1].replace('%', ''));
 
-                const baseColName = columns[colIndexInColumns]; // 예: '1칸'
-                const probColName = columns[colIndexInColumns + 1]; // 예: '1칸확률'
+                const baseColName = columns[colIndexInColumns];
+                const probColName = columns[colIndexInColumns + 1];
                 
-                rowData[baseColName] = count; // '1칸'에 빈도 값 할당
-                rowData[probColName] = percentage; // '1칸확률'에 퍼센트 값 할당
+                rowData[baseColName] = count;
+                rowData[probColName] = percentage;
                 
-                colIndexInColumns += 2; // 다음 빈도/확률 쌍으로 이동
+                colIndexInColumns += 2;
             }
             data.push(rowData);
         }
 
-        // pandas DataFrame과 유사한 구조를 반환하여 후속 로직에서 쉽게 접근하도록 합니다.
         const probDf = {
-            columns: columns, // 열 이름 배열: ['번호', '1칸', '1칸확률', '2칸', '2칸확률', ...]
-            data: data,       // 행 객체 배열: [{번호: 1, '1칸': 152, '1칸확률': 12.86, ...}, ...]
+            columns: columns,
+            data: data,
 
-            // 특정 열을 기준으로 데이터를 정렬하는 헬퍼 함수
             sortValues: function(columnName, ascending = true) {
                 return [...this.data].sort((a, b) => {
                     const valA = a[columnName];
@@ -98,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             },
 
-            // 특정 열의 값이 0보다 큰 행을 필터링하는 헬퍼 함수
             filterNonZero: function(columnName) {
                 return this.data.filter(row => row[columnName] > 0);
             }
