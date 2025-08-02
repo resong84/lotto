@@ -154,39 +154,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalCombinationSet = new Set();
             const randomSelectedNumbers = []; // 'random' 타입으로 선택된 번호들을 저장
 
-            const colsToProcess = {
-                'top': [],
-                'bottom': [],
-                'random': []
-            };
+            // 1칸부터 6칸까지 순차적으로 번호 선택
+            for (let colNum = 1; colNum <= 6; colNum++) {
+                if (finalCombinationSet.size >= 6) break;
 
-            for (const colNum in columnSelectionChoices) {
-                const selectionType = columnSelectionChoices[colNum];
-                colsToProcess[selectionType].push(parseInt(colNum));
-            }
+                const colType = columnSelectionChoices[colNum];
+                const columnName = `${colNum}칸확률`;
 
-            // 'top', 'bottom', 'random' 순서로 처리
-            for (const colType of ['top', 'bottom', 'random']) {
-                for (const colNum of colsToProcess[colType].sort((a, b) => a - b)) {
-                    if (finalCombinationSet.size >= 6) break;
+                const selectedNum = get_random_number_from_column(
+                    probDf,
+                    columnName,
+                    colType,
+                    finalCombinationSet
+                );
 
-                    // 새로운 probDf 구조에 맞춰 컬럼 이름은 여전히 'X칸확률'
-                    const column_name = `${colNum}칸확률`; 
-                    const selected_num = get_random_number_from_column(
-                        probDf,
-                        column_name,
-                        colType,
-                        finalCombinationSet
-                    );
-
-                    if (selected_num !== null) {
-                        finalCombinationSet.add(selected_num);
-                        if (colType === 'random') {
-                            randomSelectedNumbers.push(selected_num);
-                        }
+                if (selectedNum !== null) {
+                    finalCombinationSet.add(selectedNum);
+                    if (colType === 'random') {
+                        randomSelectedNumbers.push(selectedNum);
                     }
                 }
-                if (finalCombinationSet.size >= 6) break;
             }
 
             let finalCombinationList = Array.from(finalCombinationSet);
