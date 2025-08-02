@@ -195,10 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
             resultDiv.classList.add('combination-result');
 
             const combinationText = `<strong>조합 ${i + 1}:</strong> <span class="combination-numbers">[${finalCombinationList.join(', ')}]</span>`;
-            let randomValueText = "";
-            if (randomSelectedNumbers.length > 0) {
-                randomValueText = `<span class="random-value">랜덤값: ${randomSelectedNumbers.sort((a, b) => a - b).join(', ')}</span>`;
-            }
 
             resultDiv.innerHTML = `${combinationText} ${randomValueText}`;
             outputText.appendChild(resultDiv);
