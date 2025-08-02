@@ -126,6 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // 이미 선택된 번호들을 제외
         let final_eligible_numbers = eligible_numbers.filter(num => !exclude_numbers.has(num));
 
+        // 만약 특정 조건(top/bottom)에 맞는 번호가 없으면, 해당 칸의 모든 유효한 번호 중에서 무작위로 선택
+        if (final_eligible_numbers.length === 0) {
+            const all_non_zero_numbers = prob_df.filterNonZero(column_name).map(row => row.번호);
+            final_eligible_numbers = all_non_zero_numbers.filter(num => !exclude_numbers.has(num));
+        }
+
         // 디버깅: 필터링 후 최종적으로 선택 가능한 번호들 출력
         console.log(`DEBUG: Final eligible numbers for ${column_name} (${selection_type}):`, final_eligible_numbers);
 
